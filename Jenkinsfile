@@ -18,8 +18,7 @@ pipeline {
                                 sh 'mvn -B -DskipTests clean package'
               }
         }
-    }
-	stages {
+    	
 		stage('Jar Publish') {
 			steps {
 				script {
