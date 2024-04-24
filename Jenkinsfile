@@ -1,5 +1,5 @@
-def registry = 'https://algorithmtechies.jfrog.io'
-def imageName = 'algorithmtechies.jfrog.io/mydocker-docker-local/demo-workshop'
+def registry = 'http://172.21.86.127:8081/'
+def imageName = 'java-app'
 def version   = '1.0.0'
 pipeline {
     agent
@@ -31,7 +31,7 @@ pipeline {
                           "files": [
                             {
                               "pattern": "target/(*)",
-                              "target": "mavenrepo-libs-release-local/{1}",
+                              "target": "libs-release-local/{1}",
                               "flat": "false",
                               "props" : "${properties}",
                               "exclusions": [ "*.sha1", "*.md5"]
@@ -69,4 +69,3 @@ pipeline {
     }
   }
 }
-
