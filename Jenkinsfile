@@ -21,34 +21,65 @@ pipeline {
               }
         }
 
-        stage('Jar Publish') {
-                        steps {
-                                script {
-                    echo '<--------------- Jar Publish Started --------------->'
-                     def server = Artifactory.newServer url:registry+"/artifactory" ,  credentialsId:"jfrog-creds"
-                     server : SERVER_ID 
-		    echo server			
-		     def properties = "buildid=${env.BUILD_ID},commitid=${GIT_COMMIT}";
-                     def uploadSpec = """{
-                          "files": [
-                            {
-			      echo 'Contorl is here',
-                              "pattern": "target/(*)",
-                              "target": "libs-release-local/{1}",
-                              "flat": "false",
-                              "props" : "${properties}",
-                              "exclusions": [ "*.sha1", "*.md5"]
-                            }
-                         ]
-                     }"""
-                     def buildInfo = server.upload(uploadSpec)
-                     buildInfo.env.collect()
-                     server.publishBuildInfo(buildInfo)
-                     echo '<--------------- Jar Publish Ended --------------->'
-
+         stage ('Upload and publish jar file') {
+            steps {
+                rtUpload (
+                    buildName: JOB_NAME,
+                    buildNumber: BUILD_NUMBER,
+                    serverId: SERVER_ID, // Obtain an Artifactory server instance, defined in Jenkins --> Manage:
+                    spec: '''{
+                              "files": [
+                                 {
+                                  "pattern": "target/*",
+                                  "target": "libs-release-local/",
+                                  "recursive": "false"
+                                } 
+                             ]
+                        }'''    
+                    )
             }
         }
-      }
+        stage ('Publish build info') {
+            steps {
+                rtPublishBuildInfo (
+                    buildName: JOB_NAME,
+                    buildNumber: BUILD_NUMBER,
+                    serverId: SERVER_ID
+                )
+            }
+        }
+         stage ('Add interactive promotion') {
+            steps {
+                rtAddInteractivePromotion (
+                    //Mandatory parameter
+                    serverId: SERVER_ID,
+
+                    //Optional parameters
+                    targetRepo: 'result/',
+                    displayName: 'Promote me please',
+                    buildName: JOB_NAME,
+                    buildNumber: BUILD_NUMBER,
+                    comment: 'this is the promotion comment',
+                    sourceRepo: 'result/',
+                    status: 'Released',
+                    includeDependencies: true,
+                    failFast: true,
+                    copy: true
+                )
+
+                rtAddInteractivePromotion (
+                    serverId: SERVER_ID,
+                    buildName: JOB_NAME,
+                    buildNumber: BUILD_NUMBER
+                )
+            }
+         }
+         stage ('Removing files') {
+            steps {
+                sh 'rm -rf $WORKSPACE/*'
+            }
+        }
+         
 	  stage(" Docker Build ") {
 		steps {
 			script {
