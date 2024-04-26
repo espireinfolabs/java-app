@@ -32,6 +32,7 @@ pipeline {
                      def uploadSpec = """{
                           "files": [
                             {
+			      echo 'Contorl is here',
                               "pattern": "target/(*)",
                               "target": "libs-release-local/{1}",
                               "flat": "false",
